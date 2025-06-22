@@ -1,0 +1,17 @@
+[
+  {
+    "name": "lofi_leo",
+    "address": "agent1qdsepxq28jcym5zfn8lwahdwvt96wm6j4yzhsmg7wfpdr6qtrxjvs5cln46",
+    "tags": ["music", "producer", "lo-fi", "hip-hop", "chill", "beats"]
+  },
+  {
+    "name": "synthwave_stella",
+    "address": "agent1qtd925xhcazmqd5hc6gqqfcyp39zxh9u9kwq9sg3uxewtmwfgh9mu49ezey",
+    "tags": ["music", "producer", "synthwave", "retrowave", "80s", "electronic"]
+  },
+  {
+    "name": "video_director",
+    "address": "agent1qglmpjee5qm0thzxx0mkc6wnmw8ufmd983m7s5ukr753uycdjtyxcpdd49y",
+    "tags": ["video", "director", "visuals", "music video", "film", "creative"]
+  }
+]
