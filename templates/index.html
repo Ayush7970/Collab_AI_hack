@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .user-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .user-card p {
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .user-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .recommendations {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .recommendations h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .health-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        .health-status.online {
+            background: #28a745;
+        }
+
+        .health-status.offline {
+            background: #dc3545;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="health-status" id="healthStatus">Checking...</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>User Profile Management</h1>
+            <p>Create profiles and discover users with AI-powered matchmaking</p>
+        </div>
+        
+        <div class="content">
+            <div class="grid">
+                <!-- Create Profile Section -->
+                <div class="section">
+                    <h2>Create User Profile</h2>
+                    <form id="createProfileForm">
+                        <div class="form-group">
+                            <label for="userId">User ID *</label>
+                            <input type="text" id="userId" name="userId" required placeholder="Enter unique user ID">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="name">Name *</label>
+                            <input type="text" id="name" name="name" required placeholder="Enter full name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bio">Bio *</label>
+                            <textarea id="bio" name="bio" required placeholder="Tell us about yourself..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="interests">Interests</label>
+                            <input type="text" id="interests" name="interests" placeholder="e.g., music, technology, sports (comma-separated)">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="skills">Skills</label>
+                            <input type="text" id="skills" name="skills" placeholder="e.g., Python, guitar, cooking (comma-separated)">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input type="text" id="location" name="location" placeholder="e.g., New York, NY">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="profession">Profession</label>
+                            <input type="text" id="profession" name="profession" placeholder="e.g., Software Developer">
+                        </div>
+                        
+                        <button type="submit" class="btn">Create Profile</button>
+                    </form>
+                    
+                    <div id="createResult"></div>
+                </div>
+                
+                <!-- AI Matchmaking Section -->
+                <div class="section">
+                    <h2>AI Matchmaking <span class="ai-badge">CLAUDE</span></h2>
+                    <form id="matchForm">
+                        <div class="form-group">
+                            <label for="matchQuery">What are you looking for?</label>
+                            <textarea id="matchQuery" name="matchQuery" required placeholder="Describe what you need: e.g., 'Video director for a hip-hop visualizer' or 'Python developer for AI project'"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="matchLimit">Number of Matches</label>
+                            <input type="number" id="matchLimit" name="matchLimit" value="3" min="1" max="10">
+                        </div>
+                        
+                        <button type="submit" class="btn">Find Matches</button>
+                    </form>
+                    
+                    <div id="matchResult"></div>
+                </div>
+            </div>
+            
+            <!-- Get Profile Section -->
+            <div class="section">
+                <h2>Get Specific Profile</h2>
+                <form id="getProfileForm">
+                    <div class="form-group">
+                        <label for="getUserId">User ID</label>
+                        <input type="text" id="getUserId" name="getUserId" required placeholder="Enter user ID to retrieve profile">
+                    </div>
+                    
+                    <button type="submit" class="btn">Get Profile</button>
+                </form>
+                
+                <div id="getProfileResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Health check
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                const statusEl = document.getElementById('healthStatus');
+                
+                if (data.frontend === 'healthy' && data.agent && data.agent.status === 'healthy') {
+                    statusEl.textContent = 'System Online';
+                    statusEl.className = 'health-status online';
+                } else {
+                    statusEl.textContent = 'System Offline';
+                    statusEl.className = 'health-status offline';
+                }
+            } catch (error) {
+                document.getElementById('healthStatus').textContent = 'System Offline';
+                document.getElementById('healthStatus').className = 'health-status offline';
+            }
+        }
+
+        // Create Profile
+        document.getElementById('createProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const resultDiv = document.getElementById('createResult');
+            
+            // Parse interests and skills
+            const interests = formData.get('interests') ? 
+                formData.get('interests').split(',').map(item => item.trim()).filter(item => item) : [];
+            const skills = formData.get('skills') ? 
+                formData.get('skills').split(',').map(item => item.trim()).filter(item => item) : [];
+            
+            const payload = {
+                user_id: formData.get('userId'),
+                name: formData.get('name'),
+                bio: formData.get('bio'),
+                interests: interests,
+                skills: skills,
+                location: formData.get('location') || 'Unknown',
+                profession: formData.get('profession') || 'Unknown'
+            };
+            
+            resultDiv.innerHTML = '<div class="loading">Creating profile...</div>';
+            
+            try {
+                const response = await fetch('/create_profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>Success!</strong> ${result.message}<br>
+                            User ID: ${result.user_id}<br>
+                            Created: ${new Date(result.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                    e.target.reset();
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>Error:</strong> ${result.message || result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>Error:</strong> Failed to create profile. Please check if the agent is running.
+                    </div>
+                `;
+            }
+        });
+
+        // AI Matchmaking
+        document.getElementById('matchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const resultDiv = document.getElementById('matchResult');
+            
+            const payload = {
+                query: formData.get('matchQuery'),
+                limit: parseInt(formData.get('matchLimit')) || 3
+            };
+            
+            resultDiv.innerHTML = '<div class="loading">AI is finding the best matches...</div>';
+            
+            try {
+                const response = await fetch('/match_users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let html = `<div class="result success">
+                        <strong>AI found ${result.count} perfect matches!</strong>
+                    </div>`;
+                    
+                    if (result.matches && result.matches.length > 0) {
+                        html += '<h3>AI Recommendations:</h3>';
+                        result.matches.forEach((user, index) => {
+                            html += `
+                                <div class="user-card">
+                                    <h3>${user.name} (${user.user_id}) ${index === 0 ? '<span class="ai-badge">BEST MATCH</span>' : ''}</h3>
+                                    <p><strong>Bio:</strong> ${user.bio}</p>
+                                    <p><strong>Profession:</strong> ${user.profession}</p>
+                                    <p><strong>Location:</strong> ${user.location}</p>
+                                    <p><strong>Created:</strong> ${new Date(user.timestamp).toLocaleString()}</p>
+                                    
+                                    ${user.interests && user.interests.length > 0 ? 
+                                        `<p><strong>Interests:</strong></p>
+                                        <div class="tags">
+                                            ${user.interests.map(interest => `<span class="tag">${interest}</span>`).join('')}
+                                        </div>` : ''
+                                    }
+                                    
+                                    ${user.skills && user.skills.length > 0 ? 
+                                        `<p><strong>Skills:</strong></p>
+                                        <div class="tags">
+                                            ${user.skills.map(skill => `<span class="tag">${skill}</span>`).join('')}
+                                        </div>` : ''
+                                    }
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>Error:</strong> ${result.message || result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>Error:</strong> Failed to find matches. Please check if the agent is running.
+                    </div>
+                `;
+            }
+        });
+
+        // Get Profile
+        document.getElementById('getProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const resultDiv = document.getElementById('getProfileResult');
+            
+            const payload = {
+                user_id: formData.get('getUserId')
+            };
+            
+            resultDiv.innerHTML = '<div class="loading">Retrieving profile...</div>';
+            
+            try {
+                const response = await fetch('/get_profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.profile) {
+                    const user = result.profile;
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>Profile Retrieved Successfully</strong>
+                        </div>
+                        <div class="user-card">
+                            <h3>${user.name} (${user.user_id})</h3>
+                            <p><strong>Bio:</strong> ${user.bio}</p>
+                            <p><strong>Profession:</strong> ${user.profession}</p>
+                            <p><strong>Location:</strong> ${user.location}</p>
+                            <p><strong>Created:</strong> ${new Date(user.timestamp).toLocaleString()}</p>
+                            
+                            ${user.interests && user.interests.length > 0 ? 
+                                `<p><strong>Interests:</strong></p>
+                                <div class="tags">
+                                    ${user.interests.map(interest => `<span class="tag">${interest}</span>`).join('')}
+                                </div>` : ''
+                            }
+                            
+                            ${user.skills && user.skills.length > 0 ? 
+                                `<p><strong>Skills:</strong></p>
+                                <div class="tags">
+                                    ${user.skills.map(skill => `<span class="tag">${skill}</span>`).join('')}
+                                </div>` : ''
+                            }
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>Error:</strong> ${result.message || result.error || 'Profile not found'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>Error:</strong> Failed to retrieve profile. Please check if the agent is running.
+                    </div>
+                `;
+            }
+        });
+
+        // Initial health check
+        checkHealth();
+        
+        // Check health every 30 seconds
+        setInterval(checkHealth, 30000);
+    </script>
+</body>
+</html> 
