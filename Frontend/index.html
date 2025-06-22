@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>artseé - Creative DNA Visualizer</title>
+    <style>
+        /* Basic page setup */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f3e7ff, #e3eeff);
+            color: #333;
+        }
+
+        /* --- VIEW MANAGEMENT --- */
+        .view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .view.active {
+            display: flex; /* Use flex to help with centering */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* --- LANDING PAGE STYLES --- */
+        #dna-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        #text-content {
+            position: relative;
+            z-index: 2;
+            color: #443c68;
+            text-shadow: 0px 1px 3px rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            margin-bottom: 0.5rem;
+        }
+        .tagline {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            opacity: 0.8;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        #hover-label {
+            display: none; position: absolute; background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 12px;
+            padding: 12px 18px; text-align: left; pointer-events: none; z-index: 100;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); line-height: 1.6; transition: opacity 0.2s;
+        }
+        #hover-label .label-title {
+            font-weight: bold; font-size: 1.1rem; color: #635985; margin-bottom: 5px; display: block;
+        }
+
+        /* --- MODAL STYLES --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px);
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-bubble {
+            background: #fff; padding: 25px 35px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 90%; max-width: 500px;
+            max-height: 90vh; overflow-y: auto; position: relative; text-align: left;
+        }
+        .modal-bubble h2 { margin-top: 0; color: #635985; }
+        .modal-close {
+            position: absolute; top: 15px; right: 15px; font-size: 24px;
+            color: #aaa; cursor: pointer; border: none; background: none;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 10px; border: 1px solid #ddd;
+            border-radius: 8px; box-sizing: border-box; font-family: inherit;
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: #bbb; }
+        .portfolio-links-container .form-group { margin-bottom: 8px; }
+        .toggle-group { display: flex; align-items: center; justify-content: space-between; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 28px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .toggle-slider { background: linear-gradient(135deg, #6a11cb, #2575fc); }
+        input:checked + .toggle-slider:before { transform: translateX(22px); }
+        .primary-button {
+            background: linear-gradient(135deg, #6a11cb, #2575fc); color: white; border: none;
+            padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px;
+            width: 100%; margin-top: 10px; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .primary-button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+
+        /* --- UPLOAD MODAL STYLES --- */
+        #upload-modal .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .upload-box {
+            border: 2px dashed #ddd; border-radius: 10px; padding: 15px;
+            text-align: center; cursor: pointer; transition: background-color 0.2s, border-color 0.2s;
+        }
+        .upload-box:hover { background-color: #f9f9f9; border-color: #c7c7c7; }
+        .upload-box .icon { font-size: 24px; color: #aaa; }
+        .upload-box p { margin: 5px 0 0; color: #777; font-size: 0.9rem; }
+        .upload-box input[type="file"] { display: none; }
+        .file-name { font-size: 0.75rem; color: #32cd32; margin-top: 5px; font-weight: bold; }
+        .profile-pic-label { cursor: pointer; color: #6a11cb; text-decoration: underline; }
+
+        /* --- PROFILE PAGE STYLES --- */
+        #profile-page { background: linear-gradient(135deg, #e0c3fc, #8ec5fc); }
+        #profile-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #bio-overlay {
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); z-index: 10;
+            background-color: rgba(0,0,0,0.6); color: white; padding: 20px;
+            border-radius: 10px; width: 300px; text-align: center; pointer-events: none;
+        }
+        #download-profile-btn {
+            position: absolute; bottom: 30px; left: 30px; z-index: 10;
+            background-color: rgba(255,255,255,0.8); border: 1px solid #ddd;
+            padding: 10px 15px; border-radius: 8px; cursor: pointer;
+        }
+        #content-display-modal .content-container {
+            width: 100%; max-height: 70vh;
+        }
+        #content-display-modal img, #content-display-modal video {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 10px;
+        }
+        #content-display-modal audio {
+            width: 100%;
+        }
+        #content-display-modal .text-content {
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            height: 60vh;
+            overflow-y: auto;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- VIEWS -->
+    <div id="landing-page" class="view active">
+        <canvas id="dna-canvas"></canvas>
+        <div id="text-content">
+            <h1>artseé</h1>
+            <p class="tagline">Join the community.</p>
+        </div>
+        <div id="hover-label"></div>
+    </div>
+
+    <div id="profile-page" class="view">
+        <canvas id="profile-canvas"></canvas>
+        <div id="bio-overlay"></div>
+        <button id="download-profile-btn">Download Profile JSON</button>
+    </div>
+
+    <div id="collaborators-page" class="view">
+        <h1>Collaborators Page (Coming Soon!)</h1>
+    </div>
+
+
+    <!-- MODALS -->
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal-bubble">
+            <button class="modal-close" id="close-profile-modal">&times;</button>
+            <h2>Create Your Profile</h2>
+            <div class="form-group">
+                <label for="profile-pic-upload" class="profile-pic-label">Upload Profile Picture</label>
+                <input type="file" id="profile-pic-upload" accept="image/*" style="display:none;">
+                <div id="profile-pic-file-name" class="file-name"></div>
+            </div>
+            <div class="form-group"><label for="name">Name</label><input type="text" id="name" required></div>
+            <div class="form-group"><label for="age">Age</label><input type="number" id="age"></div>
+            <div class="form-group"><label for="gender">Gender Identity (Optional)</label><input type="text" id="gender"></div>
+            <div class="form-group"><label for="bio">Bio</label><textarea id="bio" placeholder="Tell us about your creative journey..."></textarea></div>
+            <div class="form-group portfolio-links-container">
+                <label>Portfolio Links</label>
+                <div class="form-group"><input type="text" name="portfolio" placeholder="e.g., SoundCloud, Behance, YouTube"></div>
+                <div class="form-group"><input type="text" name="portfolio" placeholder="Link 2 (Optional)"></div>
+                <div class="form-group"><input type="text" name="portfolio" placeholder="Link 3 (Optional)"></div>
+                <div class="form-group"><input type="text" name="portfolio" placeholder="Link 4 (Optional)"></div>
+            </div>
+            <div class="form-group">
+                <div class="toggle-group">
+                    <label for="collab-slider">Open to Collaborate?</label>
+                    <label class="toggle-switch"><input type="checkbox" id="collab-slider" checked><span class="toggle-slider"></span></label>
+                </div>
+            </div>
+            <button id="create-profile-btn" class="primary-button">Create Profile</button>
+        </div>
+    </div>
+
+    <div id="upload-modal" class="modal-overlay">
+        <div class="modal-bubble">
+            <button class="modal-close" id="close-upload-modal">&times;</button>
+            <h2>Upload Content</h2>
+            <p style="text-align:center; color: #777; margin-bottom: 20px;">Add your work to your new profile.</p>
+            <div class="upload-grid">
+                <label class="upload-box" for="image-upload"><div class="icon">🖼️</div><p>Upload Image</p><div id="image-file-name" class="file-name"></div></label>
+                <input type="file" id="image-upload" accept="image/*">
+                <label class="upload-box" for="audio-upload"><div class="icon">🎵</div><p>Upload Audio</p><div id="audio-file-name" class="file-name"></div></label>
+                <input type="file" id="audio-upload" accept="audio/*">
+                <label class="upload-box" for="video-upload"><div class="icon">🎥</div><p>Upload Video</p><div id="video-file-name" class="file-name"></div></label>
+                <input type="file" id="video-upload" accept="video/*">
+                <label class="upload-box" for="text-upload"><div class="icon">📝</div><p>Upload Text</p><div id="text-file-name" class="file-name"></div></label>
+                <input type="file" id="text-upload" accept=".txt,.md,.pdf">
+            </div>
+            <button id="finish-upload-btn" class="primary-button">Finish & View Profile</button>
+        </div>
+    </div>
+
+    <div id="content-display-modal" class="modal-overlay">
+        <div class="modal-bubble">
+             <button class="modal-close" id="close-content-modal">&times;</button>
+             <h2 id="content-modal-title"></h2>
+             <div id="content-modal-body" class="content-container"></div>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // --- GLOBAL STATE & VIEW MANAGEMENT ---
+        let isModalOpen = false;
+        let currentProfileData = {};
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        // --- DOM ELEMENT REFERENCES ---
+        const profileModal = document.getElementById('profile-modal');
+        const uploadModal = document.getElementById('upload-modal');
+        const contentDisplayModal = document.getElementById('content-display-modal');
+        const createProfileBtn = document.getElementById('create-profile-btn');
+        const finishUploadBtn = document.getElementById('finish-upload-btn');
+        const downloadProfileBtn = document.getElementById('download-profile-btn');
+
+        // --- LANDING PAGE ANIMATION (Setup) ---
+        const landingPageScene = new THREE.Scene();
+        const landingPageCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        landingPageCamera.position.z = 220;
+        const landingPageRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById('dna-canvas'), alpha: true, antialias: true });
+        landingPageRenderer.setSize(window.innerWidth, window.innerHeight);
+        landingPageRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const nodesData = [
+            { label: "🎵 Music", creators: ["Mozart", "David Bowie", "Björk"], position: new THREE.Vector3(-120, 70, -40) },
+            { label: "🎨 Art", creators: ["Frida Kahlo", "da Vinci", "Andy Warhol"], position: new THREE.Vector3(100, 120, 10) },
+            { label: "✍️ Poetry", creators: ["Maya Angelou", "Shakespeare", "Rumi"], position: new THREE.Vector3(-140, -90, -60) },
+            { label: "👗 Fashion", creators: ["Coco Chanel", "A. McQueen", "Issey Miyake"], position: new THREE.Vector3(150, -60, 50) },
+            { label: "💡 Design", creators: ["Dieter Rams", "Zaha Hadid", "Saul Bass"], position: new THREE.Vector3(10, -20, -100) },
+            { label: "🎬 Filmmaking", creators: ["S. Kubrick", "Ava DuVernay", "H. Miyazaki"], position: new THREE.Vector3(120, 30, 120) },
+            { label: "💻 Coding", creators: ["Linus Torvalds", "Grace Hopper", "S. Nakamoto"], position: new THREE.Vector3(-110, 10, 110) }
+        ];
+
+        const nodes = [];
+        const nodeGeometry = new THREE.SphereGeometry(12, 32, 32);
+        nodesData.forEach(data => {
+            const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(Math.random(), Math.random(), Math.random()).getHex() });
+            const node = new THREE.Mesh(nodeGeometry, material);
+            node.position.copy(data.position);
+            node.userData = { label: data.label, creators: data.creators };
+            nodes.push(node);
+            landingPageScene.add(node);
+        });
+
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x635985, transparent: true, opacity: 0.3 });
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const geometry = new THREE.BufferGeometry().setFromPoints([nodes[i].position, nodes[j].position]);
+                landingPageScene.add(new THREE.Line(geometry, lineMaterial));
+            }
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoveredNode = null;
+
+        function animateLandingPage() {
+            requestAnimationFrame(animateLandingPage);
+            if (document.getElementById('landing-page').classList.contains('active')) {
+                if (!isModalOpen) {
+                    raycaster.setFromCamera(mouse, landingPageCamera);
+                    const intersects = raycaster.intersectObjects(nodes);
+                    const label = document.getElementById('hover-label');
+                    if (intersects.length > 0) {
+                        if (hoveredNode !== intersects[0].object) {
+                            hoveredNode = intersects[0].object;
+                            const data = hoveredNode.userData;
+                            label.innerHTML = `<span class="label-title">${data.label}</span>${data.creators.join('<br>')}`;
+                            label.style.display = 'block';
+                        }
+                    } else if (hoveredNode) {
+                        hoveredNode = null;
+                        label.style.display = 'none';
+                    }
+                } else {
+                    document.getElementById('hover-label').style.display = 'none';
+                    hoveredNode = null;
+                }
+                nodes.forEach(node => {
+                    node.scale.lerp(node === hoveredNode ? new THREE.Vector3(1.6, 1.6, 1.6) : new THREE.Vector3(1, 1, 1), 0.1);
+                });
+                landingPageScene.rotation.y += 0.001;
+                landingPageScene.rotation.x += 0.0005;
+                landingPageRenderer.render(landingPageScene, landingPageCamera);
+            }
+        }
+        animateLandingPage();
+
+        // --- PROFILE PAGE LOGIC ---
+        let profileScene, profileCamera, profileRenderer, profileObjects = [];
+        let centerSphere, bioOverlay;
+
+        function createTextTexture(text, size = 64) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+            context.fillStyle = 'rgba(0,0,0,0)'; // transparent background
+            context.fillRect(0,0,size,size);
+            context.font = `${size * 0.8}px sans-serif`;
+            context.fillStyle = 'white';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, size / 2, size / 2);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function initProfilePage() {
+            profileScene = new THREE.Scene();
+            profileCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            profileCamera.position.z = 200;
+            profileRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById('profile-canvas'), alpha: true, antialias: true });
+            profileRenderer.setSize(window.innerWidth, window.innerHeight);
+            profileRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            bioOverlay = document.getElementById('bio-overlay');
+
+            // Center sphere with profile picture
+            const centerGeo = new THREE.SphereGeometry(40, 32, 32);
+            const pfpTexture = currentProfileData.uploads.profilePic 
+                ? new THREE.TextureLoader().load(currentProfileData.uploads.profilePic)
+                : new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const centerMat = new THREE.MeshBasicMaterial({ map: pfpTexture });
+            centerSphere = new THREE.Mesh(centerGeo, centerMat);
+            centerSphere.userData.isBio = true;
+            profileObjects.push(centerSphere);
+            profileScene.add(centerSphere);
+
+            // Revolving content spheres
+            const portalData = [
+                { type: 'image', icon: '🖼️', color: 0xff8c00, radius: 100, speed: 1, yOffset: 10 },
+                { type: 'audio', icon: '🎵', color: 0x1e90ff, radius: 120, speed: 0.8, yOffset: -20 },
+                { type: 'video', icon: '🎥', color: 0xee4b2b, radius: 90, speed: 1.2, yOffset: 0 },
+                { type: 'text', icon: '📝', color: 0xcccccc, radius: 110, speed: 1.1, yOffset: 40 },
+                { type: 'spaceship', icon: '🚀', image: 'spaceship.jpg', color: 0xffffff, radius: 140, speed: 0.7, yOffset: -30 }
+            ];
+
+            portalData.forEach(data => {
+                const geometry = data.type === 'spaceship' ? new THREE.PlaneGeometry(30, 30) : new THREE.SphereGeometry(15, 32, 32);
+                let material;
+                if(data.type === 'spaceship') {
+                    material = new THREE.MeshBasicMaterial({ 
+                        map: new THREE.TextureLoader().load(data.image), 
+                        transparent: true 
+                    });
+                } else {
+                    material = new THREE.MeshBasicMaterial({ map: createTextTexture(data.icon), color: data.color });
+                }
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.userData = data;
+                profileObjects.push(sphere);
+                profileScene.add(sphere);
+            });
+            
+            animateProfilePage();
+        }
+
+        let isSpaceshipDeparting = false;
+        function animateProfilePage() {
+            if (isSpaceshipDeparting) return; // Halt animation if departing
+            requestAnimationFrame(animateProfilePage);
+            if (document.getElementById('profile-page').classList.contains('active')) {
+                const time = Date.now() * 0.0005;
+                profileObjects.forEach(obj => {
+                    const data = obj.userData;
+                    if (data.radius) { // Only revolve objects with a radius
+                        const angle = time * data.speed;
+                        obj.position.x = data.radius * Math.cos(angle);
+                        obj.position.z = data.radius * Math.sin(angle);
+                        obj.position.y = data.yOffset * Math.sin(angle * 2);
+                        if(data.type === 'spaceship') obj.lookAt(profileCamera.position);
+                    }
+                });
+
+                // Hover logic for profile page
+                raycaster.setFromCamera(mouse, profileCamera);
+                const intersects = raycaster.intersectObjects(profileObjects);
+
+                const shouldEnlarge = intersects.length > 0 && intersects[0].object.userData.isBio;
+                if (shouldEnlarge) {
+                    centerSphere.scale.lerp(new THREE.Vector3(1.5, 1.5, 1.5), 0.1);
+                    bioOverlay.textContent = currentProfileData.bio;
+                    bioOverlay.style.display = 'block';
+                } else {
+                    centerSphere.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+                    bioOverlay.style.display = 'none';
+                }
+
+                profileRenderer.render(profileScene, profileCamera);
+            }
+        }
+        
+        // --- EVENT LISTENERS ---
+        function handleProfileObjectClick(event) {
+            if(document.getElementById('profile-page').classList.contains('active')) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, profileCamera);
+                const intersects = raycaster.intersectObjects(profileObjects);
+
+                if(intersects.length > 0) {
+                    const clickedObject = intersects[0].object;
+                    const data = clickedObject.userData;
+
+                    if(data.type === 'spaceship') {
+                        // Depart animation
+                        isSpaceshipDeparting = true;
+                        const startPos = clickedObject.position.clone();
+                        const endPos = clickedObject.position.clone().multiplyScalar(5); // Fly out
+                        endPos.y += 100;
+                        
+                        let t = 0;
+                        function depart() {
+                            t += 0.02;
+                            clickedObject.position.lerp(endPos, t);
+                            if (t < 1) {
+                                requestAnimationFrame(depart);
+                            } else {
+                                switchView('collaborators-page');
+                            }
+                        }
+                        depart();
+
+                    } else if (currentProfileData.uploads[data.type]) {
+                        displayContent(data.type);
+                    }
+                }
+            }
+        }
+        window.addEventListener('click', handleProfileObjectClick);
+        
+
+        function displayContent(type) {
+            const titleEl = document.getElementById('content-modal-title');
+            const bodyEl = document.getElementById('content-modal-body');
+            const contentData = currentProfileData.uploads[type];
+            titleEl.textContent = type.charAt(0).toUpperCase() + type.slice(1) + " Content";
+            
+            let contentHTML = '';
+            switch(type) {
+                case 'image':
+                    contentHTML = `<img src="${contentData}" alt="User uploaded image">`;
+                    break;
+                case 'audio':
+                    contentHTML = `<audio controls src="${contentData}"></audio>`;
+                    break;
+                case 'video':
+                    contentHTML = `<video controls src="${contentData}"></video>`;
+                    break;
+                case 'text':
+                     // To display the content of a text file, we fetch the base64 URL
+                    fetch(contentData).then(res => res.text()).then(text => {
+                        bodyEl.innerHTML = `<div class="text-content">${text}</div>`;
+                    });
+                    break;
+            }
+            if(type !== 'text') bodyEl.innerHTML = contentHTML;
+            contentDisplayModal.style.display = 'flex';
+        }
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            document.getElementById('hover-label').style.left = `${event.clientX + 15}px`;
+            document.getElementById('hover-label').style.top = `${event.clientY + 15}px`;
+        });
+
+        document.getElementById('landing-page').addEventListener('click', () => {
+            if (isModalOpen || !hoveredNode) return;
+            isModalOpen = true;
+            profileModal.style.display = 'flex';
+        });
+
+        function closeAllModals() {
+            [profileModal, uploadModal, contentDisplayModal].forEach(m => m.style.display = 'none');
+            isModalOpen = false;
+        }
+        document.getElementById('close-profile-modal').addEventListener('click', closeAllModals);
+        document.getElementById('close-upload-modal').addEventListener('click', closeAllModals);
+        document.getElementById('close-content-modal').addEventListener('click', closeAllModals);
+        
+        createProfileBtn.addEventListener('click', () => {
+            const portfolioInputs = document.querySelectorAll('input[name="portfolio"]');
+            currentProfileData = {
+                id: `user_${Date.now()}`,
+                name: document.getElementById('name').value,
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                bio: document.getElementById('bio').value,
+                portfolioLinks: Array.from(portfolioInputs).map(i => i.value.trim()).filter(Boolean),
+                isCollaborating: document.getElementById('collab-slider').checked,
+                uploads: currentProfileData.uploads || {} // Keep uploaded files
+            };
+            profileModal.style.display = 'none';
+            uploadModal.style.display = 'flex';
+        });
+
+        function handleFileUpload(event, type, nameElementId) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById(nameElementId).textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentProfileData.uploads[type] = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('profile-pic-upload').addEventListener('change', (e) => handleFileUpload(e, 'profilePic', 'profile-pic-file-name'));
+        document.getElementById('image-upload').addEventListener('change', (e) => handleFileUpload(e, 'image', 'image-file-name'));
+        document.getElementById('audio-upload').addEventListener('change', (e) => handleFileUpload(e, 'audio', 'audio-file-name'));
+        document.getElementById('video-upload').addEventListener('change', (e) => handleFileUpload(e, 'video', 'video-file-name'));
+        document.getElementById('text-upload').addEventListener('change', (e) => handleFileUpload(e, 'text', 'text-file-name'));
+        
+        finishUploadBtn.addEventListener('click', () => {
+            let existingProfiles = JSON.parse(localStorage.getItem('artseeProfiles')) || [];
+            existingProfiles.push(currentProfileData);
+            localStorage.setItem('artseeProfiles', JSON.stringify(existingProfiles));
+            closeAllModals();
+            switchView('profile-page');
+            initProfilePage();
+        });
+        
+        downloadProfileBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(localStorage.getItem('artseeProfiles') || '[]');
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "artsee_profiles.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            [landingPageCamera, profileCamera].forEach(cam => {
+                if (cam) {
+                    cam.aspect = width / height;
+                    cam.updateProjectionMatrix();
+                }
+            });
+            [landingPageRenderer, profileRenderer].forEach(rend => {
+                if(rend) rend.setSize(width, height);
+            });
+        });
+    </script>
+</body>
+</html>
