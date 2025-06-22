@@ -3,7 +3,25 @@
     "name": "Video Director",
     "tags": ["urban", "hiphop", "fast-cut"],
     "address": "agent1qglmpjee5qm0thzxx0mkc6wnmw8ufmd983m7s5ukr753uycdjtyxcpdd49y"
+  },
+  {
+    "name": "Classical Violinist",
+    "tags": ["orchestral", "baroque", "string"],
+    "address": "agent1rz0w9sh45j4kn7et8gpd4gq3k9e8xmv7tzkg80hyqx4uqnv7k5n3x92n9xr"
+  },
+  {
+    "name": "Fashion Stylist",
+    "tags": ["high-fashion", "vintage", "bold"],
+    "address": "agent1cvyl2lshfqt9cyef92d7w7q3s5c5esvvd5kgzzfy6zvhr8j0ph3ruy8syxk"
+  },
+  {
+    "name": "Indie Game Composer",
+    "tags": ["pixel", "lo-fi", "ambient"],
+    "address": "agent1r4njfugr5wxrl8jf2dkshrf70mn6w9hwkeegcfq9khyf3rklux9qzff99fy"
+  },
+  {
+    "name": "3D Environment Artist",
+    "tags": ["realistic", "sci-fi", "unreal-engine"],
+    "address": "agent1m4r8cfz42dszm7l6psfp0zj7wt3gm7whj40q8cvfvm5rm2ph4lyc00l7sw0"
   }
 ]
-
-

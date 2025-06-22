@@ -3,6 +3,7 @@ from uagents.protocol import Protocol
 from groq import Groq
 import json
 from models import Request, Message, Proposal, MatchResult
+import os
 
 
 
@@ -54,6 +55,11 @@ Craft an enthusiastic and creative response in 1-2 sentences.
 @protocol.on_message(model=Proposal)
 async def handle_proposal(ctx: Context, sender: str, msg: Proposal):
     ctx.logger.info(f"🎬 Round {msg.round}: Got proposal: {msg.content}")
+
+    # ✅ Append user proposal to log
+    log_path = os.path.join(os.path.dirname(__file__), "../Frontend/public/chat_log.txt")
+    with open(log_path, "a") as f:
+      f.write(f"video_director: {reply}\n")
 
     if msg.round >= 5:
         ctx.logger.info("✅ Negotiation complete.")
