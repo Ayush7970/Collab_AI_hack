@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.env
+env/
+venv/
+*.sqlite3
+
+# Node / React
+node_modules/
+build/
+dist/
+.env.local
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
