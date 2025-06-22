@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import AgentChat from './AgentChat';
+
 
 // --- Reusable Style Objects ---
 const styles = {
@@ -264,14 +266,14 @@ const CollaborationModal = ({ onSubmit, onClose, isLoading }) => {
 
 const CollaboratorResultsPage = ({ results, onSelect }) => {
     return (
-         <div>
+        <div>
             <h1 style={styles.h1}>Top 3 Matches</h1>
             <div style={{display: 'flex', gap: '20px'}}>
                 {results.map(profile => (
                     <div key={profile.user_id} style={styles.collaboratorCard}>
                         <h3>{profile.name}</h3>
                         <p>{profile.bio}</p>
-                        <button style={styles.primaryButton} onClick={() => onSelect(profile.user_id)}>Connect</button>
+                        <button style={styles.primaryButton} onClick={() => onSelect(profile)}>Connect</button>
                     </div>
                 ))}
             </div>
@@ -338,11 +340,13 @@ function App() {
         });
 
         const result = await response.json();
+
         if (result.success) {
-            alert("Query submitted to backend successfully.");
+            setView('collaborators'); // ✅ This triggers the useEffect to fetch and show matches
         } else {
             alert(`Backend responded with error: ${result.message}`);
         }
+
         closeModal('collaborate');
     } catch (err) {
         console.error("Error sending collaborator query:", err);
@@ -351,6 +355,70 @@ function App() {
         setIsLoading(false);
     }
 };
+
+const handleSelect = async (match) => {
+  try {
+    const response = await fetch("http://localhost:5001/select_match", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(match)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      setView('chat'); // ✅ IMMEDIATELY go to chat
+    } else {
+      alert("Failed to connect with collaborator: " + result.message);
+    }
+  } catch (err) {
+    console.error("Failed to select match:", err);
+    alert("Error connecting with collaborator.");
+  }
+};
+
+const fetchRecommendations = async () => {
+        try {
+            const res = await fetch('http://localhost:5001/get_recommendations');
+            const data = await res.json();
+            if (data.success && data.matches) {
+                setCollaborators(data.matches.map((match, idx) => ({
+                    ...match,
+                    user_id: match.address || `collab_${idx}`,
+                    bio: match.description || "No description provided."
+                })));
+            } else {
+                alert("No recommendations found.");
+            }
+        } catch (err) {
+            console.error("Error fetching recommendations:", err);
+            alert("Failed to load collaborator recommendations.");
+        }
+    };
+
+    useEffect(() => {
+        if (view === 'collaborators') {
+            fetchRecommendations();
+        }
+    }, [view]);
+
+
+    useEffect(() => {
+    const interval = setInterval(() => {
+        fetch('/chat_log.txt')
+            .then(res => res.text())
+            .then(text => {
+                if (text.includes("===END===")) {
+                    setView('chat'); // ✅ Automatically switch to chat view
+                    clearInterval(interval);
+                }
+            })
+            .catch(err => console.error("❌ Error checking chat log:", err));
+    }, 2000); // Check every 2 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+    }, []);
+
     
     return (
         <div style={styles.app}>
@@ -362,13 +430,16 @@ function App() {
             <div style={{ ...styles.view, ...(view === 'profile' && styles.viewActive) }}>
                 {currentProfile && <ProfilePage profileData={currentProfile} onCollaborateClick={() => openModal('collaborate')} />}
             </div>
-            
+
             <div style={{...styles.view, ...(view === 'collaborators' && styles.viewActive)}}>
-                <CollaboratorResultsPage results={collaborators} onSelect={(id) => alert(`Connecting with ${id}`)} />
+            <CollaboratorResultsPage results={collaborators} onSelect={handleSelect} />
             </div>
 
             {modals.profile && <ProfileModal onSubmit={handleCreateProfile} onClose={() => closeModal('profile')} />}
             {modals.collaborate && <CollaborationModal onSubmit={handleFindCollaborators} onClose={() => closeModal('collaborate')} isLoading={isLoading} />}
+            <div style={{ ...styles.view, ...(view === 'chat' && styles.viewActive) }}>
+               <AgentChat onBack={() => setView('collaborators')} />
+            </div>
         </div>
     );
 }
